@@ -42,6 +42,8 @@ app.use(cors());
 
 app.use("/uploads", express.static("uploads"));
 
+// Api for users
+
 app.post(
   "/auth/login",
   loginValidation,
