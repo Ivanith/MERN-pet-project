@@ -110,27 +110,45 @@ export const getMe = async (req, res) => {
 
 export const updateMe = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.userId);
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.userId,
+      {
+        activity: req.body.activity,
+        country: req.body.country,
+        city: req.body.city,
+        age: req.body.age,
+        description: req.body.description,
+      },
+      { new: true } // This option returns the updated document
+    );
 
-    if (!user) {
+    if (!updatedUser) {
       return res.status(404).json({
         message: "user not found",
       });
     }
-    await user.updateOne({
-      activity: req.body.activity,
-      country: req.body.country,
-      city: req.body.city,
-      age: req.body.age,
-      description: req.body.description,
-    });
-    res.json({
-      success: true,
-    });
+
+    const { passwordHash, ...userData } = updatedUser._doc;
+    res.json(userData);
   } catch (err) {
     console.log(err);
     res.status(500).json({
       message: "update error",
+    });
+  }
+};
+
+export const getUsers = async (req, res) => {
+  const skip = req.query.skip ? Number(req.query.skip) : 0;
+  const default_lim = 10;
+
+  try {
+    const users = await UserModel.find().skip(skip).limit(default_lim).exec();
+    res.json(users);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "users recieve error",
     });
   }
 };

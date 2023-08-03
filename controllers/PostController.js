@@ -2,8 +2,15 @@ import { json } from "express";
 import PostModel from "../models/Post.js";
 
 export const getAll = async (req, res) => {
+  const skip = req.query.skip ? Number(req.query.skip) : 0;
+  const default_lim = 10;
+
   try {
-    const posts = await PostModel.find().populate("user").exec();
+    const posts = await PostModel.find()
+      .skip(skip)
+      .limit(default_lim)
+      .populate("user")
+      .exec();
     res.json(posts);
   } catch (err) {
     console.log(err);
