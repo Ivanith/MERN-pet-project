@@ -64,6 +64,8 @@ app.patch("/auth/me", checkAuth, UserController.updateMe);
 
 app.get("/auth/users", checkAuth, UserController.getUsers);
 
+app.get("/auth/user/:id", checkAuth, UserController.getOneUser);
+
 //multer
 
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {

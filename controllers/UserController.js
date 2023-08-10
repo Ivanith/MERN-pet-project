@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-
+import PostModel from "../models/Post.js";
 import UserModel from "../models/User.js";
 
 export const register = async (req, res) => {
@@ -88,6 +88,8 @@ export const login = async (req, res) => {
 };
 
 export const getMe = async (req, res) => {
+  const skip = req.query.skip ? Number(req.query.skip) : 0;
+  const default_lim = 10;
   try {
     const user = await UserModel.findById(req.userId);
 
@@ -96,10 +98,15 @@ export const getMe = async (req, res) => {
         message: "user not found",
       });
     }
+    // posts part
+    const posts = await PostModel.find({ user: req.userId })
+      .skip(skip)
+      .limit(default_lim)
+      .exec();
 
     const { passwordHash, ...userData } = user._doc;
 
-    res.json(userData);
+    res.json({ user: userData, posts });
   } catch (err) {
     console.log(err);
     res.status(500).json({
@@ -143,12 +150,46 @@ export const getUsers = async (req, res) => {
   const default_lim = 10;
 
   try {
-    const users = await UserModel.find().skip(skip).limit(default_lim).exec();
+    const excludeFields = ["email", "passwordHash"];
+    const users = await UserModel.find()
+      .select(excludeFields.map((field) => "-" + field).join(" "))
+      .skip(skip)
+      .limit(default_lim)
+      .exec();
     res.json(users);
   } catch (err) {
     console.log(err);
     res.status(500).json({
       message: "users recieve error",
+    });
+  }
+};
+
+export const getOneUser = async (req, res) => {
+  const skip = req.query.skip ? Number(req.query.skip) : 0;
+  const default_lim = 10;
+
+  try {
+    //user by id part
+    const userId = req.params.id;
+    const excludeFields = ["passwordHash", "email"];
+    const user = await UserModel.findById({ _id: userId }).select(
+      excludeFields.map((field) => "-" + field).join(" ")
+    );
+    //posts from user part
+
+    const posts = await PostModel.find({ user: userId })
+      .skip(skip)
+      .limit(default_lim)
+      .exec();
+
+    const { passwordHash, ...userData } = user._doc;
+
+    res.json({ user: userData, posts });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "permission denied",
     });
   }
 };

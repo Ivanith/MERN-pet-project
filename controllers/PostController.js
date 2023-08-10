@@ -9,7 +9,10 @@ export const getAll = async (req, res) => {
     const posts = await PostModel.find()
       .skip(skip)
       .limit(default_lim)
-      .populate("user")
+      .populate({
+        path: "user",
+        select: "-email -passwordHash", //exclude user data
+      })
       .exec();
     res.json(posts);
   } catch (err) {
@@ -35,7 +38,10 @@ export const getOne = async (req, res) => {
         returnDocument: "after",
       }
     )
-      .populate("user")
+      .populate({
+        path: "user",
+        select: "-email -passwordHash", //exclude user data
+      })
       .then((doc) => {
         if (!doc) {
           return Promise.reject({
