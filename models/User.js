@@ -23,6 +23,11 @@ const UserSchema = new mongoose.Schema(
     age: Number,
     description: String,
     avatarUrl: String,
+    likedPosts: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Post",
+      default: [],
+    },
   },
   {
     timestamps: true,

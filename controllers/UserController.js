@@ -148,13 +148,26 @@ export const updateMe = async (req, res) => {
 export const getUsers = async (req, res) => {
   const skip = req.query.skip ? Number(req.query.skip) : 0;
   const default_lim = 10;
+  const date = req.query.date;
+  const direction = req.query.direction;
 
   try {
-    const excludeFields = ["email", "passwordHash"];
+    const sortOptions = {};
+
+    if (date) {
+      sortOptions.createdAt = date;
+    } else if (direction) {
+      sortOptions.fullName = direction;
+    }
+
+    const excludeFields = ["email", "passwordHash", "likedPosts"];
+
     const users = await UserModel.find()
       .select(excludeFields.map((field) => "-" + field).join(" "))
       .skip(skip)
       .limit(default_lim)
+      .collation({ locale: "en", strength: 1 }) //ignore register
+      .sort(sortOptions)
       .exec();
     res.json(users);
   } catch (err) {
@@ -172,7 +185,7 @@ export const getOneUser = async (req, res) => {
   try {
     //user by id part
     const userId = req.params.id;
-    const excludeFields = ["passwordHash", "email"];
+    const excludeFields = ["passwordHash", "email", "likedPosts"];
     const user = await UserModel.findById({ _id: userId }).select(
       excludeFields.map((field) => "-" + field).join(" ")
     );

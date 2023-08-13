@@ -93,6 +93,8 @@ app.patch(
   handleValidationErrors,
   PostController.update
 );
+app.post("/posts/like/:id", checkAuth, PostController.likePost);
+app.delete("/posts/like/:id", checkAuth, PostController.unlikePost);
 
 app.listen(4444, (err) => {
   if (err) {

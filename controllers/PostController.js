@@ -1,17 +1,33 @@
-import { json } from "express";
+import { json, query } from "express";
+import mongoose from "mongoose";
 import PostModel from "../models/Post.js";
+import UserModel from "../models/User.js";
 
 export const getAll = async (req, res) => {
   const skip = req.query.skip ? Number(req.query.skip) : 0;
   const default_lim = 10;
+  const date = req.query.date;
+  const views = req.query.views;
+  const likes = req.query.likes;
 
   try {
+    const sortOptions = {};
+
+    if (date) {
+      sortOptions.createdAt = date;
+    } else if (views) {
+      sortOptions.viewsCount = views;
+    } else if (likes) {
+      sortOptions.likes = likes;
+    }
+
     const posts = await PostModel.find()
       .skip(skip)
       .limit(default_lim)
+      .sort(sortOptions)
       .populate({
         path: "user",
-        select: "-email -passwordHash", //exclude user data
+        select: "-email -passwordHash -likedPosts", //exclude user data
       })
       .exec();
     res.json(posts);
@@ -40,7 +56,7 @@ export const getOne = async (req, res) => {
     )
       .populate({
         path: "user",
-        select: "-email -passwordHash", //exclude user data
+        select: "-email -passwordHash -likedPosts", //exclude user data
       })
       .then((doc) => {
         if (!doc) {
@@ -158,5 +174,55 @@ export const update = async (req, res) => {
     res.status(500).json({
       message: "post refresh error",
     });
+  }
+};
+
+export const likePost = async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.userId;
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (user.likedPosts.includes(postId)) {
+      return res
+        .status(200)
+        .json({ message: "Post already liked by the user" });
+    }
+    user.likedPosts.push(postId);
+    await user.save();
+
+    const post = await PostModel.findById(postId);
+    post.likes++;
+    await post.save();
+
+    res.status(200).json({ message: "post liked successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to like post", error });
+  }
+};
+
+export const unlikePost = async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.userId;
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user.likedPosts.includes(postId)) {
+      return res.status(400).json({ message: "post not liked by the user" });
+    }
+
+    const postObjectId = new mongoose.Types.ObjectId(postId);
+    user.likedPosts = user.likedPosts.filter((id) => !id.equals(postObjectId));
+    await user.save();
+
+    const post = await PostModel.findById(postId);
+    post.likes--;
+    await post.save();
+
+    return res.status(200).json({ message: "post unliked successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Failed to unlike post", error });
   }
 };
