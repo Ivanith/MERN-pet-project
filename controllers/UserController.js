@@ -206,3 +206,22 @@ export const getOneUser = async (req, res) => {
     });
   }
 };
+
+export const searchUserByName = async (req, res) => {
+  const name = new RegExp(req.params?.name, "i");
+
+  if (name !== "") {
+    try {
+      const excludeFields = ["passwordHash", "email", "likedPosts"];
+      const search_results = await UserModel.find({ fullName: name }).select(
+        excludeFields.map((field) => "-" + field).join(" ")
+      );
+      res.status(200).json(search_results);
+    } catch (error) {
+      console.log(error);
+      res.status(404).json({ message: "No mached user found" });
+    }
+  } else {
+    res.status(404).json({ message: "Username for search not provided" });
+  }
+};

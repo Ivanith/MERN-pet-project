@@ -25,6 +25,7 @@ mongoose
 
 const app = express();
 
+// multer part
 const storage = multer.diskStorage({
   destination: (_, __, cb) => {
     cb(null, "uploads");
@@ -35,12 +36,12 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+app.use("/uploads", express.static("uploads"));
 
+//default
 app.use(express.json());
 
 app.use(cors());
-
-app.use("/uploads", express.static("uploads"));
 
 // Api for users
 
@@ -66,7 +67,9 @@ app.get("/auth/users", checkAuth, UserController.getUsers);
 
 app.get("/auth/user/:id", checkAuth, UserController.getOneUser);
 
-//multer
+app.get("/auth/users/search/:name", checkAuth, UserController.searchUserByName);
+
+//multer route
 
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
   res.json({
@@ -77,7 +80,9 @@ app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
 // Api for posts
 
 app.get("/posts", PostController.getAll);
+
 app.get("/posts/:id", PostController.getOne);
+
 app.post(
   "/posts",
   checkAuth,
@@ -85,7 +90,9 @@ app.post(
   handleValidationErrors,
   PostController.create
 );
+
 app.delete("/posts/:id", checkAuth, PostController.remove);
+
 app.patch(
   "/posts/:id",
   checkAuth,
@@ -94,7 +101,10 @@ app.patch(
   PostController.update
 );
 app.post("/posts/like/:id", checkAuth, PostController.likePost);
+
 app.delete("/posts/like/:id", checkAuth, PostController.unlikePost);
+
+app.get("/posts/search/:title", checkAuth, PostController.searchPostByName);
 
 app.listen(4444, (err) => {
   if (err) {

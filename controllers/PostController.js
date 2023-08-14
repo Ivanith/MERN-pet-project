@@ -226,3 +226,22 @@ export const unlikePost = async (req, res) => {
     return res.status(500).json({ message: "Failed to unlike post", error });
   }
 };
+
+export const searchPostByName = async (req, res) => {
+  const title = new RegExp(req.params?.title, "i");
+
+  if (title !== "") {
+    try {
+      const search_results = await PostModel.find({ title: title }).populate({
+        path: "user",
+        select: "-email -passwordHash -likedPosts", //exclude user data
+      });
+      res.status(200).json(search_results);
+    } catch (error) {
+      console.log(error);
+      res.status(404).json({ message: "No mached post found" });
+    }
+  } else {
+    res.status(404).json({ message: "Post title for search not provided" });
+  }
+};
